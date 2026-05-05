@@ -48,7 +48,8 @@ def compute_rewrite_quality_zsre(
         rewrite_prompts,
         paraphrase_prompts,
     ]
-    # Flatten all the evaluated prefixes into one list.
+
+    # Compute accuracy-based metrics (original behavior)
     target_tok = tok(" " + target_new["str"])["input_ids"]
     inp_prompts_og = list(chain(*prob_prompts))
     inp_prompts = [
@@ -62,10 +63,19 @@ def compute_rewrite_quality_zsre(
         for i in range(len(target_tok))
     ]
 
-    stuff_probs = test_batch_prediction_acc(model, tok, inp_prompts, inp_targets)
+    stuff_acc = test_batch_prediction_acc(model, tok, inp_prompts, inp_targets)
+
+    # Compute probability-based metrics (for success/diff calculation)
+    stuff_probs = test_batch_prediction_probs(
+        model,
+        tok,
+        list(chain(*prob_prompts)),
+        target_new["str"],
+        target_true["str"],
+    )
 
     # Predict for neighborhood prompts (dictionary format).
-    neighborhood_correct = test_batch_prediction_acc(
+    neighborhood_acc = test_batch_prediction_acc(
         model,
         tok,
         [
@@ -75,16 +85,29 @@ def compute_rewrite_quality_zsre(
         [el["target"] for el in neighborhood_prompts],
     )
 
-    probs = stuff_probs + neighborhood_correct
+    # Compute neighborhood probs
+    neighborhood_probs = test_batch_prediction_probs(
+        model,
+        tok,
+        [
+            el["prompt"].format(record["requested_rewrite"])
+            for el in neighborhood_prompts
+        ],
+        target_new["str"],
+        target_true["str"],
+    )
+
+    acc_probs = stuff_acc + neighborhood_acc
 
     # Unflatten the results again into a list of lists.
     cutoffs = [0] + np.cumsum(
         [l * len(target_tok) for l in map(len, prob_prompts)]
     ).tolist()
-    ret_probs = [probs[cutoffs[i - 1] : cutoffs[i]] for i in range(1, len(cutoffs))]
-    # Structure the restuls as a dictionary.
+    ret_acc = [acc_probs[cutoffs[i - 1] : cutoffs[i]] for i in range(1, len(cutoffs))]
+
+    # Structure the results as a dictionary - return BOTH acc and probs
     ret = {
-        f"{key}_correct": ret_probs[i]
+        f"{key}_correct": ret_acc[i]
         for i, key in enumerate(
             [
                 "rewrite_prompts",
@@ -92,7 +115,12 @@ def compute_rewrite_quality_zsre(
             ]
         )
     }
-    ret["neighborhood_prompts_correct"] = neighborhood_correct
+    ret["neighborhood_prompts_correct"] = neighborhood_acc
+
+    # Add probability metrics for success/diff calculation
+    ret["rewrite_prompts_probs"] = stuff_probs
+    ret["paraphrase_prompts_probs"] = []
+    ret["neighborhood_prompts_probs"] = neighborhood_probs
 
     return ret
 
@@ -118,3 +146,61 @@ def test_batch_prediction_acc(model, tok, prompts: typing.List[str], target):
         correct_id = correct_id[:, 0].squeeze()
 
         return (ans == correct_id).detach().cpu().numpy().tolist()
+
+
+def test_batch_prediction_probs(model, tok, prompts: typing.List[str], target_new: str, target_true: str):
+    """
+    Compute log probabilities for target_new and target_true given prompts.
+    Returns list of dicts with 'target_new' and 'target_true' log probs.
+    """
+    new_tok = tok(f" {target_new}")["input_ids"]
+    true_tok = tok(f" {target_true}")["input_ids"]
+    max_len = max(len(new_tok), len(true_tok))
+
+    # Pad tokens to same length
+    new_tok = new_tok + [tok.pad_token_id] * (max_len - len(new_tok))
+    true_tok = true_tok + [tok.pad_token_id] * (max_len - len(true_tok))
+
+    prompt_tok = tok(
+        [p for p in prompts for _ in range(2)],  # Duplicate for new and true
+        padding=True,
+        return_tensors="pt",
+    ).to("cuda")
+
+    new_tok_t = torch.tensor([new_tok] * len(prompts)).to("cuda")
+    true_tok_t = torch.tensor([true_tok] * len(prompts)).to("cuda")
+
+    with torch.no_grad():
+        logits = model(**prompt_tok).logits
+        prompt_lens = prompt_tok["attention_mask"].sum(1).tolist()
+
+    probs = []
+
+    for i, p_len in enumerate(prompt_lens):
+        new_prob = 0.0
+        true_prob = 0.0
+
+        # Compute log prob for each token in target
+        for j in range(max_len):
+            if new_tok[j] != tok.pad_token_id:
+                log_prob = torch.nn.functional.log_softmax(
+                    logits[i, p_len - 1 + j, :], dim=0
+                )[new_tok[j]].item()
+                new_prob += log_prob
+
+            if true_tok[j] != tok.pad_token_id:
+                log_prob = torch.nn.functional.log_softmax(
+                    logits[i + len(prompts), p_len - 1 + j, :], dim=0
+                )[true_tok[j]].item()
+                true_prob += log_prob
+
+        # Normalize by token count
+        new_len = sum(1 for t in new_tok if t != tok.pad_token_id)
+        true_len = sum(1 for t in true_tok if t != tok.pad_token_id)
+
+        probs.append({
+            "target_new": new_prob / new_len,
+            "target_true": true_prob / true_len,
+        })
+
+    return probs

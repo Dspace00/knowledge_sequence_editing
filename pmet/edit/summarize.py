@@ -126,32 +126,31 @@ def main(
                 cur_sum[k] = tuple(np.around(z * 100, 2) for z in v)
 
         for prefix in ["pre", "post"]:
-            for k_efficacy, k_generalization, k_specificity in [
-                (
-                    f"{prefix}_rewrite_success",
-                    f"{prefix}_paraphrase_success",
-                    f"{prefix}_neighborhood_success",
-                ),
-                # (
-                #     f"{prefix}_rewrite_acc",
-                #     f"{prefix}_paraphrase_acc",
-                #     f"{prefix}_neighborhood_acc",
-                # ),
-            ]:
-                if all(k in cur_sum for k in [k_efficacy, k_generalization, k_specificity]):
-                    hmean_list = [
-                        cur_sum[k_efficacy][0],
-                        cur_sum[k_generalization][0],
-                        cur_sum[k_specificity][0],
-                    ]
+            # Calculate score based on success (probability comparison)
+            if all(k in cur_sum for k in [
+                f"{prefix}_rewrite_success",
+                f"{prefix}_paraphrase_success",
+                f"{prefix}_neighborhood_success",
+            ]):
+                hmean_list = [
+                    cur_sum[f"{prefix}_rewrite_success"][0],
+                    cur_sum[f"{prefix}_paraphrase_success"][0],
+                    cur_sum[f"{prefix}_neighborhood_success"][0],
+                ]
+                cur_sum[f"{prefix}_score_success"] = (hmean(hmean_list), np.nan)
 
-                    # if f"{prefix}_ngram_entropy" in cur_sum:
-                    #     hmean_list.append(2 ** (cur_sum[f"{prefix}_ngram_entropy"][0] / 100))
-                    # if f"{prefix}_reference_score" in cur_sum:
-                    #     hmean_list.append(cur_sum[f"{prefix}_reference_score"][0])
-
-                    cur_sum[f"{prefix}_score"] = (hmean(hmean_list), np.nan)
-                    break
+            # Calculate score based on acc (greedy decoding accuracy)
+            if all(k in cur_sum for k in [
+                f"{prefix}_rewrite_acc",
+                f"{prefix}_paraphrase_acc",
+                f"{prefix}_neighborhood_acc",
+            ]):
+                hmean_list = [
+                    cur_sum[f"{prefix}_rewrite_acc"][0],
+                    cur_sum[f"{prefix}_paraphrase_acc"][0],
+                    cur_sum[f"{prefix}_neighborhood_acc"][0],
+                ]
+                cur_sum[f"{prefix}_score_acc"] = (hmean(hmean_list), np.nan)
         cur_sum.update(metadata)
         pprint(cur_sum)
         summaries.append(cur_sum)
