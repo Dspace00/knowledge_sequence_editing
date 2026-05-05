@@ -216,3 +216,43 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# =============================================
+# MEMIT / PMET 特定文件（知识编辑实验）
+# =============================================
+
+# LLM 模型权重（非常大，下载需要几小时到几天，由 HuggingFace 管理）
+# 这些文件应该通过 transformers 自动下载，不需要上传到仓库
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.gguf
+*.ggml
+
+# 预计算的统计数据（每次编辑实验生成，文件非常大）
+data/stats/
+memit/data/stats/
+pmet/data/stats/
+*/data/stats/
+
+# Wikipedia 语料数据（HuggingFace datasets 自动下载的 Arrow 格式）
+*.arrow
+
+# 实验运行结果和日志
+runs/
+experiments/results/
+experiments/runs/
+*/runs/
+logs/
+*.log
+
+# 临时文件和中间结果
+temp/
+tmp/
+tempCodeRunnerFile.py
+
+# Python 虚拟环境（如果存在）
+memit_dqg/
+pmet_dqg/
+
