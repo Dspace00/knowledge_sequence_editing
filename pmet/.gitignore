@@ -1,0 +1,79 @@
+# ============================================
+# Python 通用忽略项（GitHub Python 模板）
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.conda/
+*.pyc
+*.pyo
+
+# ============================================
+# 项目特定忽略项
+# ============================================
+
+# --- 数据集（不上传，从网络重新下载）---
+edit/data/counterfact.json
+edit/data/zsre_mend_eval.json
+
+# --- Stats 统计文件（计算耗时，不上传）---
+#edit/data/stats/
+#!edit/data/stats/README.md
+
+# --- 结果目录（每次运行生成，不上传）---
+edit/results/
+
+# --- 模型目录（不上传，用 HuggingFace 或本地路径）---
+LLM/
+_models/
+
+# --- 权重文件（不上传）---
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.h5
+*.ckpt
+
+# --- 调试产生的临时文件 ---
+directory_tree.txt
+*.log
+*.tmp
+
+# --- rewriting-knowledge-vs（子项目/实验结果，不需要上传）---
+edit/rewriting-knowledge-vs/
+
+# --- rome（PMET 源码不依赖的子项目，不需要上传）---
+edit/rome/
+
+# --- 复现任务流程文档（可选：保留在本地，上传到 README 更好）---
+PMET复现任务流程.md
