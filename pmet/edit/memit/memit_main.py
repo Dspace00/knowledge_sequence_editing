@@ -186,6 +186,7 @@ def execute_memit(
             else hparams.mom2_n_samples // 10,
             hparams.mom2_dtype,
             force_recompute=force_recompute,
+            mom2_batch_tokens=hparams.mom2_batch_tokens,
         )
 
         # Compute update in double precision
@@ -246,6 +247,7 @@ def get_cov(
     mom2_dtype: str,
     inv: bool = False,
     force_recompute: bool = False,
+    mom2_batch_tokens: int = 2048,
 ) -> torch.Tensor:
     """
     Retrieves covariance statistics, then computes the algebraic inverse.
@@ -267,6 +269,7 @@ def get_cov(
             sample_size=mom2_n_samples,
             precision=mom2_dtype,
             force_recompute=force_recompute,
+            batch_tokens=mom2_batch_tokens,
         )
         COV_CACHE[key] = stat.mom2.moment().float().to("cpu")
 
