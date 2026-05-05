@@ -158,49 +158,47 @@ def test_batch_prediction_probs(model, tok, prompts: typing.List[str], target_ne
     max_len = max(len(new_tok), len(true_tok))
 
     # Pad tokens to same length
-    new_tok = new_tok + [tok.pad_token_id] * (max_len - len(new_tok))
-    true_tok = true_tok + [tok.pad_token_id] * (max_len - len(true_tok))
+    new_tok_padded = new_tok + [tok.pad_token_id] * (max_len - len(new_tok))
+    true_tok_padded = true_tok + [tok.pad_token_id] * (max_len - len(true_tok))
 
-    prompt_tok = tok(
-        [p for p in prompts for _ in range(2)],  # Duplicate for new and true
-        padding=True,
-        return_tensors="pt",
-    ).to("cuda")
-
-    new_tok_t = torch.tensor([new_tok] * len(prompts)).to("cuda")
-    true_tok_t = torch.tensor([true_tok] * len(prompts)).to("cuda")
-
-    with torch.no_grad():
-        logits = model(**prompt_tok).logits
-        prompt_lens = prompt_tok["attention_mask"].sum(1).tolist()
+    # Tokenize prompts
+    prompt_tok = tok(prompts, padding=True, return_tensors="pt").to("cuda")
+    prompt_lens = prompt_tok["attention_mask"].sum(1).tolist()
 
     probs = []
 
-    for i, p_len in enumerate(prompt_lens):
-        new_prob = 0.0
-        true_prob = 0.0
+    with torch.no_grad():
+        # Process target_new and target_true in two passes
+        for target_tok_list, padded_tok in [(new_tok, new_tok_padded), (true_tok, true_tok_padded)]:
+            target_t = torch.tensor([padded_tok] * len(prompts)).to("cuda")
 
-        # Compute log prob for each token in target
-        for j in range(max_len):
-            if new_tok[j] != tok.pad_token_id:
-                log_prob = torch.nn.functional.log_softmax(
-                    logits[i, p_len - 1 + j, :], dim=0
-                )[new_tok[j]].item()
-                new_prob += log_prob
+            # Concatenate prompt + target tokens
+            input_ids = torch.cat([prompt_tok["input_ids"], target_t], dim=1)
+            attention_mask = torch.cat([
+                prompt_tok["attention_mask"],
+                torch.ones_like(target_t)
+            ], dim=1)
 
-            if true_tok[j] != tok.pad_token_id:
-                log_prob = torch.nn.functional.log_softmax(
-                    logits[i + len(prompts), p_len - 1 + j, :], dim=0
-                )[true_tok[j]].item()
-                true_prob += log_prob
+            logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
 
-        # Normalize by token count
-        new_len = sum(1 for t in new_tok if t != tok.pad_token_id)
-        true_len = sum(1 for t in true_tok if t != tok.pad_token_id)
+            for i, p_len in enumerate(prompt_lens):
+                log_prob = 0.0
+                count = 0
+                for j in range(len(target_tok_list)):
+                    # logits at position (p_len + j - 1) predicts token at position (p_len + j)
+                    tok_id = target_tok_list[j]
+                    log_p = torch.nn.functional.log_softmax(
+                        logits[i, p_len + j - 1, :], dim=0
+                    )[tok_id].item()
+                    log_prob += log_p
+                    count += 1
+                probs.append(log_prob / count if count > 0 else 0.0)
 
-        probs.append({
-            "target_new": new_prob / new_len,
-            "target_true": true_prob / true_len,
+    # Group into pairs (new, true) for each prompt
+    result = []
+    for i in range(len(prompts)):
+        result.append({
+            "target_new": probs[2 * i],
+            "target_true": probs[2 * i + 1],
         })
-
     return probs
