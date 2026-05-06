@@ -1,5 +1,4 @@
 {
-    "_note": "CF-optimized MEMIT hyperparameters for LLaMA-3-8B-Instruct. Key changes: lower kl_factor for better paraphrase泛化, higher clamp_norm for stronger edits, more grad steps for convergence, lower weight_decay for stable training.",
     "layers": [4, 5, 6, 7, 8],
     "layer_selection": "all",
     "fact_token": "subject_last",
