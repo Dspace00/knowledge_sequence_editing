@@ -1,4 +1,4 @@
-name: memit_dqg
+name: memit_dqg138
 channels:
   - conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/linux-64/
@@ -124,6 +124,6 @@ dependencies:
       - typing-extensions==4.15.0
       - tzdata==2026.1
       - urllib3==2.6.3
-      - xxhash==3.6.0
+      - xxhash>=3.0.0
       - yarl==1.23.0
-prefix: /home/wentao/miniconda3/envs/memit_dqg
+prefix: /home/wentao/miniconda3/envs/memit_dqg138
