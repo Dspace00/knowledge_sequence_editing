@@ -129,15 +129,18 @@ def get_reprs_at_idxs(
     def _process(cur_repr, batch_idxs, key):
         nonlocal to_return
         cur_repr = cur_repr[0] if type(cur_repr) is tuple else cur_repr
+        hidden_dim = cur_repr[0].shape[-1]
         for i, idx_list in enumerate(batch_idxs):
             seq_len = cur_repr[i].shape[0]
             if isinstance(idx_list, (list, tuple)):
                 if any(idx >= seq_len for idx in idx_list):
                     print(f"WARNING: skipping batch element {i}, idx_list={idx_list} out of bounds for seq_len={seq_len}")
+                    to_return[key].append(torch.zeros(hidden_dim, device=cur_repr[0].device, dtype=cur_repr[0].dtype))
                     continue
             else:
                 if idx_list >= seq_len:
                     print(f"WARNING: skipping batch element {i}, idx={idx_list} out of bounds for seq_len={seq_len}")
+                    to_return[key].append(torch.zeros(hidden_dim, device=cur_repr[0].device, dtype=cur_repr[0].dtype))
                     continue
             to_return[key].append(cur_repr[i][idx_list].mean(0))
 
