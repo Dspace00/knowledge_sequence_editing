@@ -294,6 +294,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Use cached k/v pairs",
     )
+    parser.add_argument(
+        "--results_dir",
+        type=str,
+        default=None,
+        help="Custom results directory name. Defaults to alg_name. "
+        "Use this to isolate experiment results (e.g., MEMIT_CF for CF-tuned runs).",
+    )
     parser.set_defaults(skip_generation_tests=False, conserve_memory=False)
     args = parser.parse_args()
 
@@ -307,7 +314,7 @@ if __name__ == "__main__":
         args.skip_generation_tests,
         args.generation_test_interval,
         args.conserve_memory,
-        dir_name=args.alg_name,
+        dir_name=args.results_dir or args.alg_name,
         num_edits=args.num_edits,
         use_cache=args.use_cache,
     )
