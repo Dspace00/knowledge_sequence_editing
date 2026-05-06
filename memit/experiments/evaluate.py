@@ -232,7 +232,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         choices=["gpt2-medium", "gpt2-large", "gpt2-xl", "EleutherAI/gpt-j-6B",
-                 "/home/wentao/xzw1/LLM/Meta-Llama-3-8B-Instruct", "/home/wentao/xzw1/LLM/my_llama-3-8b-instruct"],
+                 "/home/wentao/LLM/Meta-Llama-3-8B-Instruct", "/home/wentao/LLM/my_llama-3-8b-instruct"],
         default="gpt2-xl",
         help="Model to edit.",
         required=True,
