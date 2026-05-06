@@ -130,6 +130,15 @@ def get_reprs_at_idxs(
         nonlocal to_return
         cur_repr = cur_repr[0] if type(cur_repr) is tuple else cur_repr
         for i, idx_list in enumerate(batch_idxs):
+            seq_len = cur_repr[i].shape[0]
+            if isinstance(idx_list, (list, tuple)):
+                if any(idx >= seq_len for idx in idx_list):
+                    print(f"WARNING: skipping batch element {i}, idx_list={idx_list} out of bounds for seq_len={seq_len}")
+                    continue
+            else:
+                if idx_list >= seq_len:
+                    print(f"WARNING: skipping batch element {i}, idx={idx_list} out of bounds for seq_len={seq_len}")
+                    continue
             to_return[key].append(cur_repr[i][idx_list].mean(0))
 
     for batch_contexts, batch_idxs in _batch(n=128):
