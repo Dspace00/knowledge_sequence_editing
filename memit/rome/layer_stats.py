@@ -132,7 +132,7 @@ def layer_stats(
         return TokenizedDataset(raw_ds, tokenizer, maxlen=maxlen)
 
     # Continue with computation of statistics
-    batch_size = 8  # Small batch size to avoid OOM on large models
+    batch_size = 1  # 8B 模型 + RTX 4090 D (24GB)，batch_size=1 避免 OOM
     npos = getattr(model.config, 'n_positions', None) or model.config.max_position_embeddings
     if batch_tokens is None:
         batch_tokens = npos * 3  # Sort and divide into batches with this many tokens
@@ -176,7 +176,7 @@ def layer_stats(
         collate_fn=length_collation(batch_tokens),
         pin_memory=True,
         random_sample=1,
-        num_workers=2,
+        num_workers=0,  # 避免 CPU 预取占用额外内存
     )
     batch_count = -(-(sample_size or len(ds)) // batch_size)
     with torch.no_grad():
@@ -195,6 +195,7 @@ def layer_stats(
                     # feats = flatten_masked_batch(tr.output.detach().cpu(), batch["attention_mask"])
                     feats = feats.to(dtype=dtype)
                     stat.add(feats)
+                    torch.cuda.empty_cache()  # 每 batch 后显式释放 GPU 缓存
     return stat
 
 
