@@ -6,13 +6,16 @@ from itertools import islice
 from time import time
 from typing import Tuple, Union
 
-# Add MEMIT directory to sys.path so 'rome' module and eval_utils can be found
-_MEMIT_ROOT = Path(__file__).parent.parent.parent / "memit"
-_PMET_ROOT = Path(__file__).parent
-if str(_MEMIT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_MEMIT_ROOT))
-if str(_PMET_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PMET_ROOT))
+# Add necessary directories to sys.path
+_FILE_DIR = Path(__file__).parent          # .../pmet/edit/
+_PROJ_ROOT = _FILE_DIR.parent.parent       # .../knowledge_sequence_editing/
+for _p in [
+    str(_FILE_DIR),                          # pmet/edit/          (for dsets, util, pmet, memit/rome)
+    str(_PROJ_ROOT / "memit"),              # knowledge_sequence_editing/memit/  (for rome)
+    str(_FILE_DIR / "util"),                # pmet/edit/util/      (for eval_utils)
+]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import tqdm
 import torch
@@ -27,8 +30,8 @@ from dsets import (
     MultiCounterFactDataset,
     get_tfidf_vectorizer,
 )
-from util.eval_utils.eval_utils_counterfact import compute_rewrite_quality_counterfact
-from util.eval_utils.eval_utils_zsre import compute_rewrite_quality_zsre
+from eval_utils.eval_utils_counterfact import compute_rewrite_quality_counterfact
+from eval_utils.eval_utils_zsre import compute_rewrite_quality_zsre
 from memit import MEMITHyperParams, apply_memit_to_model
 from pmet import PMETHyperParams, apply_pmet_to_model
 from util import nethook
