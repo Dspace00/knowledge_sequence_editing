@@ -6,10 +6,13 @@ from itertools import islice
 from time import time
 from typing import Tuple, Union
 
-# Add MEMIT directory to sys.path so 'rome' module can be found
+# Add MEMIT directory to sys.path so 'rome' module and eval_utils can be found
 _MEMIT_ROOT = Path(__file__).parent.parent.parent / "memit"
+_PMET_ROOT = Path(__file__).parent
 if str(_MEMIT_ROOT) not in sys.path:
     sys.path.insert(0, str(_MEMIT_ROOT))
+if str(_PMET_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PMET_ROOT))
 
 import tqdm
 import torch
