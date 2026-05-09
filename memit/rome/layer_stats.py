@@ -182,15 +182,19 @@ def layer_stats(
     with torch.no_grad():
         for batch_group in progress(loader, total=batch_count):
             for batch in batch_group:
-                batch = dict_to_(batch, "cuda")
-                with Trace(
-                    model, layer_name, retain_input=True, retain_output=False, stop=True
-                ) as tr:
-                    model(**batch)
-                feats = flatten_masked_batch(tr.input, batch["attention_mask"])
-                # feats = flatten_masked_batch(tr.output, batch["attention_mask"])
-                feats = feats.to(dtype=dtype)
-                stat.add(feats)
+                with torch.no_grad():
+                    # forward 在 GPU 上做
+                    batch = dict_to_(batch, "cuda")
+                    with Trace(
+                        model, layer_name, retain_input=True, retain_output=False, stop=True
+                    ) as tr:
+                        model(**batch)
+                    batch = dict_to_(batch, "cpu")  # 立即释放 GPU batch 显存
+                    # tr.input 也在 GPU 上，移到 CPU 再处理
+                    feats = flatten_masked_batch(tr.input.detach().cpu(), batch["attention_mask"])
+                    # feats = flatten_masked_batch(tr.output.detach().cpu(), batch["attention_mask"])
+                    feats = feats.to(dtype=dtype)
+                    stat.add(feats)
     return stat
 
 
