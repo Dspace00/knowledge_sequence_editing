@@ -126,7 +126,10 @@ def layer_stats(
         else:
             maxlen = npos
 
-        return TokenizedDataset(raw_ds["train"], tokenizer, maxlen=maxlen)
+        # 兼容新旧 datasets 版本：新版直接返回 Dataset，旧版返回 DatasetDict
+        if isinstance(raw_ds, DatasetDict):
+            raw_ds = raw_ds["train"]
+        return TokenizedDataset(raw_ds, tokenizer, maxlen=maxlen)
 
     # Continue with computation of statistics
     batch_size = 8  # Small batch size to avoid OOM on large models
