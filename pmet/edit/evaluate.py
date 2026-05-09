@@ -1,8 +1,16 @@
 import json
 import shutil
+import sys
+from pathlib import Path
 from itertools import islice
 from time import time
 from typing import Tuple, Union
+
+# Add MEMIT directory to sys.path so 'rome' module can be found
+_MEMIT_ROOT = Path(__file__).parent.parent.parent / "memit"
+if str(_MEMIT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_MEMIT_ROOT))
+
 import tqdm
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -245,9 +253,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--model_name",
-        choices=["EleutherAI/gpt-neox-20b", "EleutherAI/gpt-j-6B", "Meta-Llama-3-8B-Instruct","my_llama-3-8b-instruct"],
+        type=str,
         default="EleutherAI/gpt-j-6B",
-        help="Model to edit.",
+        help="Model to edit. Can be a HuggingFace repo name or a local path.",
         required=False,
     )
     parser.add_argument(
