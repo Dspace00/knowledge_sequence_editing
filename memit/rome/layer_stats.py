@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import torch
-from datasets import load_dataset
+from datasets import DatasetDict, load_dataset
 from tqdm.auto import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
