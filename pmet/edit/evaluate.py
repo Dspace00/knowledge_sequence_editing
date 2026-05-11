@@ -107,14 +107,11 @@ def main(
     if type(model_name) is str:
         if model_path:
             print(f"Instantiating model: {model_name} from {model_path}")
-            if "neox" in model_name:
-                model = AutoModelForCausalLM.from_pretrained(model_path if model_path else model_name).half().cuda()
-            else:
-                model = AutoModelForCausalLM.from_pretrained(model_path if model_path else model_name).cuda()
+            model = AutoModelForCausalLM.from_pretrained(model_path if model_path else model_name, torch_dtype=torch.float16).cuda()
             tok = AutoTokenizer.from_pretrained(model_path if model_path else model_name)
         else:
             print(f"Instantiating model: {model_name}")
-            model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
+            model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16).cuda()
             tok = AutoTokenizer.from_pretrained(model_name)
         tok.pad_token = tok.eos_token
     else:

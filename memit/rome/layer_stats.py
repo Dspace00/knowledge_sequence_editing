@@ -41,7 +41,7 @@ def main():
     aa("--to_collect", default=["mom2"], type=lambda x: x.split(","))
     aa("--sample_size", default=100000, type=lambda x: None if x == "all" else int(x))
     aa("--batch_tokens", default=None, type=lambda x: None if x == "any" else int(x))
-    aa("--precision", default="float32", choices=["float64", "float32", "float16"])
+    aa("--precision", default="float16", choices=["float64", "float32", "float16"])
     aa("--stats_dir", default=STATS_DIR)
     aa("--download", default=1, type=int, choices=[0, 1])
     args = parser.parse_args()
