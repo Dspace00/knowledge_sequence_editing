@@ -228,13 +228,13 @@ def execute_pmet(
             targets = z_list[rewrite_module_name]  - cur_zs #z_i - h_i^L
             try:
                 layer_ks, targets = (
-                    layers_ks[rewrite_module_name].T.double().to("cuda:1"),
-                    targets.double().to("cuda:1")
+                    layers_ks[rewrite_module_name].T.float().to("cuda:1"),
+                    targets.float().to("cuda:1")
                 )
             except:
                 layer_ks, targets = (
-                    layers_ks[rewrite_module_name].T.double(),
-                    targets.double()
+                    layers_ks[rewrite_module_name].T.float(),
+                    targets.float()
                 )
             # Load covariance matrix
             force_recompute = False
@@ -255,7 +255,7 @@ def execute_pmet(
             repeat_factor = (layer_ks.size(1) // targets.size(1))
             targets = targets.repeat_interleave(repeat_factor, dim=1) #r
             upd_matrix =  (targets / np.sqrt((len(hparams.layers) - i ))) @ layer_ks.T @ torch.inverse(layer_ks @ layer_ks.T + 
-                                             hparams.mom2_update_weight * cov.double())
+                                             hparams.mom2_update_weight * cov.float())
             weight_name = f"{rewrite_module_name.format(layer)}.weight"
             upd_matrix = upd_matrix_match_shape(upd_matrix, weights[weight_name].shape)
 

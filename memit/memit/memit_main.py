@@ -199,21 +199,21 @@ def execute_memit(
             mom2_batch_tokens=hparams.mom2_batch_tokens,
         )
 
-        # Compute update in double precision
+        # Compute update in float32 precision (float64 causes OOM on 24GB GPU with 8B model)
         layer_ks, targets = (
-            layer_ks.double(),
-            targets.double(),
+            layer_ks.float(),
+            targets.float(),
         )
 
         # AlphaEdit cumulative compensation: add cache_c to KKT matrix
         # This prevents "dirty model" problem in sequential editing
         if cache_c is not None:
-            cache_term = cache_c[i, :, :].cuda().double()
+            cache_term = cache_c[i, :, :].cuda().float()
         else:
-            cache_term = torch.zeros_like(cov.double())
+            cache_term = torch.zeros_like(cov.float())
 
         adj_k = torch.linalg.solve(
-            hparams.mom2_update_weight * cov.double() + cache_term + layer_ks @ layer_ks.T,
+            hparams.mom2_update_weight * cov.float() + cache_term + layer_ks @ layer_ks.T,
             layer_ks,
         )
         resid = targets / (len(hparams.layers) - i)  # Distribute residual across layers
