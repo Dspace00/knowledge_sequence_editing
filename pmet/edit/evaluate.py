@@ -113,7 +113,6 @@ def main(
             print(f"Instantiating model: {model_name}")
             model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16).cuda()
             tok = AutoTokenizer.from_pretrained(model_name)
-        model.config.use_cache = False  # 禁用 KV cache，减少 stats 计算时的显存占用
         tok.pad_token = tok.eos_token
     else:
         model, tok = model_name
