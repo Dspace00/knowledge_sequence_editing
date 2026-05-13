@@ -105,6 +105,8 @@ def layer_stats(
                 "/home/wentao/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
                 # 21号服务器路径（如有手动放置）
                 "/home/xiezhiwei/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
+                # 21号服务器 data0 NVMe 盘（上传的 wiki 语料）
+                "/data0/xiezhiwei/wiki/wikipedia_train.arrow",
             ]
             arrow_path = None
             for p in possible_paths:
