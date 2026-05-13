@@ -39,7 +39,6 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
         torch_dtype=torch.float16,
-        device_map="cpu",
     ).eval()
     model = model.to(f"cuda:{GPU}")
     torch.cuda.set_device(GPU)
