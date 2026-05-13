@@ -26,7 +26,15 @@ DATASET = "wikipedia"
 SAMPLE_SIZE = 100000
 PRECISION = "float32"
 BATCH_TOKENS = 2048
-GPU = 4
+
+# Auto-detect GPU: if CUDA_VISIBLE_DEVICES is set, use 0 (the only visible device)
+# Otherwise use the actual GPU ordinal
+import os
+_CUDA_VISIBLE = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+if _CUDA_VISIBLE:
+    GPU = 0   # Only GPU 0 is visible when CUDA_VISIBLE_DEVICES is set
+else:
+    GPU = 4    # Default to GPU 4 if run directly without CUDA_VISIBLE_DEVICES
 
 # ATTN layers for PMET
 LAYERS = [4, 5, 6, 7, 8]
