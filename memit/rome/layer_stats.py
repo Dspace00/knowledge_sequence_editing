@@ -99,28 +99,37 @@ def layer_stats(
             import pandas as pd
             from datasets import Dataset
 
-            # HuggingFace datasets 的 Wikipedia 缓存路径（需要先运行一次 load_dataset 自动下载）
-            WIKIPEDIA_CACHE_PATH = "/home/wentao/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475"
-            arrow_path = WIKIPEDIA_CACHE_PATH + "/wikipedia-train.arrow"
+            # 尝试多个可能的 Wikipedia Arrow 缓存路径
+            possible_paths = [
+                # 138号服务器路径
+                "/home/wentao/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
+                # 21号服务器路径（如有手动放置）
+                "/home/xiezhiwei/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
+            ]
+            arrow_path = None
+            for p in possible_paths:
+                if os.path.exists(p):
+                    arrow_path = p
+                    break
 
-            # 步骤 1：内存映射，避免一次性加载到内存
-            with pa.memory_map(arrow_path, "r") as mmap:
-                # 步骤 2：使用 open_stream（HuggingFace 专用 IPC Stream 格式）
-                reader = pa.ipc.open_stream(mmap)
-                table = reader.read_all()
-
-            # 步骤 3：Arrow → pandas → Dataset（三步兼容旧版 datasets）
-            df = table.to_pandas()
-            raw_ds = Dataset.from_pandas(df)
-        else:
+            if arrow_path:
+                print(f"Loading wikipedia from local Arrow file: {arrow_path}")
+                with pa.memory_map(arrow_path, "r") as mmap:
+                    reader = pa.ipc.open_stream(mmap)
+                    table = reader.read_all()
+                df = table.to_pandas()
+                raw_ds = Dataset.from_pandas(df)
+            else:
+                print("Local Arrow file not found, using load_dataset() to load/download wikipedia...")
+                raw_ds = load_dataset("wikipedia", "20200501.en")
             # wikitext 分支走默认逻辑（和原代码一致）
             raw_ds = load_dataset(
                 ds_name,
                 dict(wikitext="wikitext-103-raw-v1", wikipedia="20200501.en")[ds_name],
             )
 
-        # 计算 maxlen（和原逻辑一致）
-        npos = getattr(model.config, 'n_positions', None) or model.config.max_position_embeddings
+        # 计算 maxlen
+        npos = getattr(model.config, 'n_positions', None) or getattr(model.config, 'max_position_embeddings', 2048)
         if batch_tokens is not None and batch_tokens < npos:
             maxlen = batch_tokens
         else:
