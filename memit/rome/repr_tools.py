@@ -99,6 +99,8 @@ def get_words_idxs_in_templates(
         raise ValueError(f"Unknown subtoken type: {subtoken}")
 
 
+BATCH_SIZE = 32
+
 def get_reprs_at_idxs(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
@@ -144,7 +146,7 @@ def get_reprs_at_idxs(
                     continue
             to_return[key].append(cur_repr[i][idx_list].mean(0))
 
-    for batch_contexts, batch_idxs in _batch(n=128):
+    for batch_contexts, batch_idxs in _batch(n=BATCH_SIZE):
         contexts_tok = tok(batch_contexts, padding=True, return_tensors="pt").to(
             next(model.parameters()).device
         )
