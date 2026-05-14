@@ -201,4 +201,4 @@ def test_batch_prediction_probs(model, tok, prompts: typing.List[str], target_ne
             "target_new": probs[2 * i],
             "target_true": probs[2 * i + 1],
         })
-    return probs
+    return result
