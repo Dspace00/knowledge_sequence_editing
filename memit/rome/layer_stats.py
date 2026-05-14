@@ -99,36 +99,37 @@ def layer_stats(
             import pandas as pd
             from datasets import Dataset
 
-            # 尝试多个可能的 Wikipedia Arrow 缓存路径
+            # 尝试多个可能的 Wikipedia Arrow 缓存路径（优先级从高到低）
             possible_paths = [
+                # 21号服务器 data0 NVMe 盘（优先，上传的 wiki 语料）
+                "/data0/xiezhiwei/wiki/wikipedia_train.arrow",
                 # 138号服务器路径
                 "/home/wentao/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
-                # 21号服务器路径（如有手动放置）
+                # 21号服务器 .cache 路径（如有）
                 "/home/xiezhiwei/.cache/huggingface/datasets/wikipedia/20200501.en/1.0.0/009f923d9b6dd00c00c8cdc7f408f2b47f45dd4f5fb7982a21f9448f4afbe475/wikipedia-train.arrow",
-                # 21号服务器 data0 NVMe 盘（上传的 wiki 语料）
-                "/data0/xiezhiwei/wiki/wikipedia_train.arrow",
             ]
             arrow_path = None
             for p in possible_paths:
                 if os.path.exists(p):
-                    arrow_path = p
-                    break
-
-            if arrow_path:
-                print(f"Loading wikipedia from local Arrow file: {arrow_path}")
-                with pa.memory_map(arrow_path, "r") as mmap:
-                    reader = pa.ipc.open_stream(mmap)
-                    table = reader.read_all()
-                df = table.to_pandas()
-                raw_ds = Dataset.from_pandas(df)
+                    try:
+                        print(f"Trying to open Wikipedia from: {p}")
+                        with pa.memory_map(p, "r") as mmap:
+                            reader = pa.ipc.open_stream(mmap)
+                            table = reader.read_all()
+                        df = table.to_pandas()
+                        raw_ds = Dataset.from_pandas(df)
+                        arrow_path = p
+                        print(f"Successfully loaded Wikipedia from: {arrow_path}")
+                        break
+                    except Exception as e:
+                        print(f"Failed to open {p}: {e}, trying next path...")
             else:
                 print("Local Arrow file not found, using load_dataset() to load/download wikipedia...")
                 raw_ds = load_dataset("wikipedia", "20200501.en")
-            # wikitext 分支走默认逻辑（和原代码一致）
-            raw_ds = load_dataset(
-                ds_name,
-                dict(wikitext="wikitext-103-raw-v1", wikipedia="20200501.en")[ds_name],
-            )
+
+        # wikitext 分支走默认逻辑（和原代码一致）
+        if ds_name == "wikitext":
+            raw_ds = load_dataset("wikitext", "wikitext-103-raw-v1")
 
         # 计算 maxlen
         npos = getattr(model.config, 'n_positions', None) or getattr(model.config, 'max_position_embeddings', 2048)

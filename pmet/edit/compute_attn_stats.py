@@ -6,7 +6,7 @@ Usage (from pmet/edit/ directory):
 GPU: 4
 Layers: 4, 5, 6, 7, 8
 Output: data/stats/meta-llama_Meta-Llama-3-8B-Instruct/wikipedia_stats/
-        model.layers.{n}.attn.out_proj_float32_mom2_t2048_100000.npz
+        model.layers.{n}.self_attn.o_proj_float32_mom2_t2048_100000.npz
 """
 
 import sys
@@ -38,7 +38,8 @@ else:
 
 # ATTN layers for PMET
 LAYERS = [4, 5, 6, 7, 8]
-LAYER_NAME_TMPL = "model.layers.{}.attn.out_proj"
+# FIX: LLaMA-3 uses self_attn.o_proj, NOT attn.out_proj
+LAYER_NAME_TMPL = "model.layers.{}.self_attn.o_proj"
 
 
 def main():
