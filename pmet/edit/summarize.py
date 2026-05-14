@@ -45,7 +45,7 @@ def main(
             if "time" in data:
                 cur_sum["time"].append(data["time"])
 
-            for prefix in ["pre", "post"]:
+                for prefix in ["pre", "post"]:
                 # Probability metrics for which new should be lower (better) than true
                 for key in ["rewrite_prompts_probs", "paraphrase_prompts_probs"]:
                     if prefix not in data or key not in data[prefix]:
@@ -54,11 +54,19 @@ def main(
                     sum_key_discrete = f"{prefix}_{key.split('_')[0]}_success"
                     sum_key_cont = f"{prefix}_{key.split('_')[0]}_diff"
 
+                    items = data[prefix][key]
+                    # Skip non-dict entries (e.g., floats from corrupted/partial results)
+                    valid_items = [x for x in items if isinstance(x, dict)]
+                    if len(valid_items) < len(items):
+                        print(f"Warning: {case_file} [{prefix}][{key}] has {len(items) - len(valid_items)} non-dict entries; skipping them.")
+                    if not valid_items:
+                        continue
+
                     cur_sum[sum_key_discrete].append(
                         np.mean(
                             [
                                 x["target_true"] > x["target_new"]
-                                for x in data[prefix][key]
+                                for x in valid_items
                             ]
                         )
                     )
@@ -66,7 +74,7 @@ def main(
                         np.mean(
                             [
                                 np.exp(-x["target_new"]) - np.exp(-x["target_true"])
-                                for x in data[prefix][key]
+                                for x in valid_items
                             ]
                         )
                     )
@@ -76,11 +84,18 @@ def main(
                 sum_key_cont = f"{prefix}_neighborhood_diff"
                 key = "neighborhood_prompts_probs"
                 if prefix in data and key in data[prefix]:
+                    items = data[prefix][key]
+                    valid_items = [x for x in items if isinstance(x, dict)]
+                    if len(valid_items) < len(items):
+                        print(f"Warning: {case_file} [{prefix}][{key}] has {len(items) - len(valid_items)} non-dict entries; skipping them.")
+                    if not valid_items:
+                        continue
+
                     cur_sum[sum_key_discrete].append(
                         np.mean(
                             [
                                 x["target_true"] < x["target_new"]
-                                for x in data[prefix][key]
+                                for x in valid_items
                             ]
                         )
                     )
@@ -88,7 +103,7 @@ def main(
                         np.mean(
                             [
                                 np.exp(-x["target_true"]) - np.exp(-x["target_new"])
-                                for x in data[prefix][key]
+                                for x in valid_items
                             ]
                         )
                     )
